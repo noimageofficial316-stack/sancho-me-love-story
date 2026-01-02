@@ -824,7 +824,7 @@
   <div class="wrap">
     <div class="frame" id="frame">
       <!-- ✅ BGM -->
-      <audio id="bgm" src="sounds/bgm_main.mp3" loop preload="auto"></audio>
+      <audio id="bgm" src="sounds/bgm_main.mp3" loop preload="auto" playsinline></audio>
 
       <!-- ======================================================
            ⑤ TITLE
@@ -993,45 +993,31 @@ function showScene(name){
 /* =========================
    ✅ BGM（スマホだけ音量でかい対策：play前後で強制適用）
 ========================= */
+// ==========================
+// BGM（iOS完全対応・安全版）
+// ==========================
 const bgm = document.getElementById("bgm");
-
-// 端末判定
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-// ここで音量を決める（gain は 0.0〜1.0）
-const GAIN_PC = 0.06;     // PC
-const GAIN_MB = 0.05;    // スマホ（まだデカければ 0.008 とかに）
-
-let bgmUnlocked = false;
-
-// --- WebAudio（iOS対策の本体） ---
-let audioCtx = null;
-let gainNode = null;
-let mediaSrc = null;
-
-function ensureAudioGraph(){
-  if (audioCtx) return;
-
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  audioCtx = new AudioContext();
-
-  // ⚠️ createMediaElementSource は同じ audio 要素に1回しか作れない
-  mediaSrc = audioCtx.createMediaElementSource(bgm);
-  gainNode = audioCtx.createGain();
-
-  mediaSrc.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-
-  applyBgmGain();
-}
-
-function applyBgmGain(){
-  if (!gainNode) return;
-  gainNode.gain.value = isMobile ? GAIN_MB : GAIN_PC;
-}
+// 音量（ここだけ触ればOK）
+bgm.volume = isMobile ? 0.05 : 0.06;
+bgm.muted = false;
+bgm.playsInline = true;
 
 function resetBgmToStart(){
   try { bgm.currentTime = 0; } catch(e){}
+}
+
+function unlockAndPlayFromTop(){
+  try { bgm.pause(); } catch(e){}
+  resetBgmToStart();
+
+  try { bgm.load(); } catch(e){}
+
+  const p = bgm.play();
+  if (p && typeof p.catch === "function") {
+    p.catch(err => console.log("BGM blocked:", err));
+  }
 }
 
 async function tryPlayBgmFromTop(){
@@ -1150,6 +1136,22 @@ const QUESTIONS = {
 ========================= */
 const titleScreen = document.getElementById("titleScreen");
 const startBtn = document.getElementById("startBtn");
+
+// タイトル画面をタップした瞬間にBGM開始
+["touchstart","pointerdown","mousedown","click"].forEach(ev=>{
+  titleScreen.addEventListener(ev, () => {
+    if (!scenes.title.classList.contains("active")) return;
+    unlockAndPlayFromTop();
+  }, { capture:true, passive:false });
+});
+
+// STARTボタン押下でも再生保証
+["touchstart","pointerdown","mousedown","click"].forEach(ev=>{
+  startBtn.addEventListener(ev, () => {
+    if (!scenes.title.classList.contains("active")) return;
+    unlockAndPlayFromTop();
+  }, { capture:true, passive:false });
+});
 
 // ✅ タイトル画面を押した瞬間だけBGMを解錠（最速）
 titleScreen.addEventListener("pointerdown", (e) => {
