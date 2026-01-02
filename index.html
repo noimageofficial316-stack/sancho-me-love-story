@@ -1180,12 +1180,12 @@ const startBtn = document.getElementById("startBtn");
 
 titleScreen.addEventListener("pointerdown", () => {
   if (!scenes.title.classList.contains("active")) return;
-  unlockAndPlayBgm();
+  unlockAndPlay();
 }, { passive: true });
 
 startBtn.addEventListener("pointerdown", () => {
   if (!scenes.title.classList.contains("active")) return;
-  unlockAndPlayBgm();
+  unlockAndPlay();
 }, { passive: true });
 
 // STARTボタン押下でも再生保証
