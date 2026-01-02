@@ -1060,31 +1060,31 @@ function onEnterTitle(){
 }
 
 async function unlockBgmIfTitle(){
-  // タイトル以外でも「最初の一回」は解錠してOKにしとくと安定する
-  if(bgmUnlocked) return;
+  if (bgmUnlocked) return;
 
-  // ✅ ここが「ユーザー操作中」なので WebAudio 初期化してOK
   ensureAudioGraph();
 
-  if (audioCtx && audioCtx.state === "suspended") {
-    try { await audioCtx.resume(); } catch(e){}
-  }
-
-  // ✅ 二重再生防止＋確実に先頭
+  // 先に停止＆先頭へ（即）
   try { bgm.pause(); } catch(e){}
   resetBgmToStart();
   applyBgmGain();
 
-  try {
-    await bgm.play();
-    bgmUnlocked = true;
-  } catch(e) {
-    // ここで失敗するなら、端末がミュート/音量0/低電力/メディア制限の可能性
-  }
+  // resume開始（待ちすぎない）
+  const resumeP =
+    (audioCtx && audioCtx.state === "suspended")
+      ? audioCtx.resume().catch(()=>{})
+      : Promise.resolve();
+
+  // playもすぐ投げる
+  const playP = bgm.play().catch(()=>{});
+
+  // 両方が落ち着いたら解錠扱い
+  await Promise.all([resumeP, playP]);
+
+  // 再生が始まってたら解錠
+  if (!bgm.paused) bgmUnlocked = true;
 }
 
-window.addEventListener("touchstart", unlockBgmIfTitle, { passive:true });
-window.addEventListener("pointerdown", unlockBgmIfTitle, { passive:true });
 window.addEventListener("keydown", (e)=>{
   if(e.key === "Enter" || e.key === " ") unlockBgmIfTitle();
 });
@@ -1150,6 +1150,14 @@ const QUESTIONS = {
 ========================= */
 const titleScreen = document.getElementById("titleScreen");
 const startBtn = document.getElementById("startBtn");
+
+// ✅ タイトル画面を押した瞬間だけBGMを解錠（最速）
+titleScreen.addEventListener("pointerdown", (e) => {
+  // タイトル表示中だけ
+  if (!scenes.title.classList.contains("active")) return;
+
+  unlockBgmIfTitle();  // ← 既存の関数を呼ぶだけ
+}, { passive: true, capture: true });
 
 function goToSelect(){
   titleScreen.classList.add("fadeout");
