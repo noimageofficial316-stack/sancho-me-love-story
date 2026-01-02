@@ -1011,22 +1011,22 @@ function resetBgmToStart(){
 
 async function tryPlayBgmFromTop(){
   resetBgmToStart();
-
-  // ✅ 再生前に必ず適用
   applyBgmVol();
 
   try {
     await bgm.play();
-
-    // ✅ 再生直後にも再適用（スマホ対策）
-    applyBgmVol();
-
     bgmUnlocked = true;
+
+    // ✅ 再生直後に何回か叩く（スマホの巻き戻り対策）
+    applyBgmVol();
+    setTimeout(applyBgmVol, 30);
+    setTimeout(applyBgmVol, 120);
+    setTimeout(applyBgmVol, 300);
+
   } catch(e) {
-    // 自動再生ブロック時はここに来る（スマホで普通）
+    // ブロック時
   }
 }
-
 /* タイトルに入ったら「とりあえず再生」を試す */
 function onEnterTitle(){
   // 解錠済みなら確実に鳴らせる
