@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>三丁目ラブストーリー（統合版）</title>
+
+<style>
+  html,body{ margin:0; background:#000; font-family:"MS PGothic","Hiragino Kaku Gothic ProN",sans-serif; }
+  .wrap{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    box-sizing:border-box;
+  }
+
+  .frame{
+    width:960px; height:540px;
+    border-radius:16px; position:relative; overflow:hidden;
+    box-shadow:0 0 40px rgba(0,0,0,.6);
+    background:#000;
+    transform-origin:center;
+  }
+
+  .scene{
+    position:absolute; inset:0;
+    opacity:0; pointer-events:none;
+    transition: opacity .25s ease;
+  }
+  .scene.active{ opacity:1; pointer-events:auto; }
+
+  @media (max-width: 700px) and (hover: none) and (pointer: coarse){
+    .wrap{
+      padding:
+        calc(12px + env(safe-area-inset-top))
+        calc(12px + env(safe-area-inset-right))
+        calc(12px + env(safe-area-inset-bottom))
+        calc(12px + env(safe-area-inset-left));
+    }
+    .frame{
+      width:360px;
+      height:640px;
+      border-radius:12px;
+    }
+  }
+
+  /* =========================================================
+     ⑤ TITLE
+     ========================================================= */
+  #sceneTitle .screen{
+    position:relative;
+    width:100%; height:100%;
+    overflow:hidden;
+    background:#000;
+    opacity:0;
+    animation: title_screenIn .18s ease forwards;
+  }
+  @keyframes title_screenIn{ to{ opacity:1; } }
+
+  #sceneTitle .bg{
+    position:absolute; inset:0;
+    background:url("./images/bg_town.png") center/cover no-repeat;
+    z-index:1;
+  }
+
+  #sceneTitle .titleArea{
+    position:absolute;
+    left:50%;
+    top:46%;
+    transform:translate(-50%,-50%);
+    z-index:3;
+    width:min(620px, calc(100% - 80px));
+    opacity:0;
+  }
+  #sceneTitle .titleArea img{ width:100%; height:auto; display:block; }
+
+  #sceneTitle .menu{
+    position:absolute;
+    left:50%;
+    top:66%;
+    transform:translateX(-50%);
+    z-index:4;
+    opacity:0;
+  }
+
+  #sceneTitle.runAnim .titleArea{
+    animation: title_logoIn .8s ease forwards;
+    animation-delay: .22s;
+  }
+  @keyframes title_logoIn{
+    from{ opacity:0; transform:translate(-50%,-50%) translateY(10px); }
+    to  { opacity:1; transform:translate(-50%,-50%) translateY(0); }
+  }
+
+  #sceneTitle.runAnim .menu{
+    animation: title_startIn .7s ease forwards;
+    animation-delay: .52s;
+  }
+  @keyframes title_startIn{
+    from{ opacity:0; transform:translateX(-50%) translateY(8px); }
+    to  { opacity:1; transform:translateX(-50%) translateY(0); }
+  }
+
+  #sceneTitle .startBox{
+    width:220px;
+    padding:10px 0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    background:#1a5f3a;
+    border:2px solid #8a5b2f;
+    border-radius:10px;
+    color:#eaf7ee;
+    font-size:16px;
+    cursor:pointer;
+    box-shadow:
+      inset 0 0 0 2px rgba(0,0,0,.25),
+      0 6px 14px rgba(0,0,0,.35);
+    transition:.15s;
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+  }
+  #sceneTitle .startBox:hover{ transform:translateY(-2px); filter:brightness(1.05); }
+
+  #sceneTitle .pointer{
+    font-size:14px;
+    animation: title_blink .9s steps(2,end) infinite;
+  }
+  @keyframes title_blink{ 50%{ opacity:0; } }
+
+  #sceneTitle .screen.fadeout{
+    opacity:0;
+    transition: opacity .28s ease;
+  }
+
+  @media (max-width: 700px){
+    #sceneTitle .titleArea{
+      top:44%;
+      width: calc(100% - 16px);
+      max-width: 360px;
+    }
+    #sceneTitle .menu{ top:62%; }
+    #sceneTitle .startBox{
+      width:200px;
+      font-size:15px;
+      border-radius:9px;
+    }
+  }
+
+  /* =========================================================
+     ② SELECT
+     ========================================================= */
+  #sceneSelect .screen{
+    width:100%; height:100%;
+    background:url("images/bg_town.png") center/cover no-repeat;
+    border-radius:inherit;
+    position:relative;
+    overflow:hidden;
+    opacity:0;
+    transform:translateY(6px);
+    animation: sel_screenIn .55s ease forwards;
+    transition: opacity .5s ease;
+  }
+  @keyframes sel_screenIn{to{opacity:1;transform:translateY(0);}}
+  #sceneSelect .screen.fadeout{opacity:0;}
+
+  #sceneSelect .cards{
+    position:absolute;
+    top:90px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:40px;
+  }
+
+  #sceneSelect .card{
+    width:360px;height:360px;
+    background:rgba(0,0,0,.35);
+    border-radius:16px;
+    position:relative;
+    opacity:0;
+    transform:translateY(10px);
+    animation: sel_cardIn .45s ease forwards;
+    transition: transform .35s ease, opacity .25s ease, filter .25s ease;
+  }
+  #sceneSelect .card:nth-child(1){animation-delay:.15s;}
+  #sceneSelect .card:nth-child(2){animation-delay:.28s;}
+  @keyframes sel_cardIn{to{opacity:1;transform:translateY(0);}}
+
+  #sceneSelect .card img{
+    position:absolute;
+    bottom:90px;
+    left:50%;
+    transform:translateX(-50%);
+    height:280px;
+    pointer-events:none;
+    user-select:none;
+  }
+
+  #sceneSelect .namebox{
+    position:absolute;
+    bottom:20px;left:20px;right:20px;
+    background:#2f5f3a;
+    border:2px solid #c59a5c;
+    border-radius:10px;
+    padding:12px 14px 14px;
+    color:#fff;
+    text-align:center;
+  }
+  #sceneSelect .namebox .info{font-size:15px; white-space:nowrap;}
+  #sceneSelect .select{margin-top:6px;font-size:14px;opacity:.9; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent;}
+
+  #sceneSelect .card.active{
+    outline:2px solid rgba(255,255,255,.4);
+    box-shadow:0 0 18px rgba(255,255,255,.15);
+  }
+  #sceneSelect .card.active .select::before{
+    content:"▶ ";
+    animation: sel_blink .9s steps(2,end) infinite;
+  }
+  @keyframes sel_blink{50%{opacity:0;}}
+
+  #sceneSelect .confirm{
+    position:absolute;
+    left:50%;
+    bottom:28px;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,.65);
+    border:2px solid rgba(255,255,255,.18);
+    border-radius:10px;
+    padding:10px 16px;
+    color:#fff;
+    font-size:16px;
+    opacity:0;
+    pointer-events:none;
+    z-index:10;
+  }
+  #sceneSelect .confirm.show{opacity:1; transition: opacity .2s ease;}
+
+  #sceneSelect .flash{
+    position:absolute;
+    inset:0;
+    background:#fff;
+    opacity:0;
+    pointer-events:none;
+    z-index:9999;
+  }
+  #sceneSelect .flash.on{animation: sel_flash .28s ease;}
+  @keyframes sel_flash{
+    0%{opacity:0;}
+    30%{opacity:.95;}
+    100%{opacity:0;}
+  }
+
+  @media (max-width:700px) and (hover:none) and (pointer:coarse){
+    #sceneSelect .cards{top:44px;flex-direction:column;gap:18px;}
+    #sceneSelect .card{width:320px;height:240px;border-radius:14px;}
+    #sceneSelect .card img{height:200px;bottom:58px;}
+    #sceneSelect .namebox{left:16px;right:16px;bottom:12px;}
+    #sceneSelect .namebox .info{font-size:14px;}
+    #sceneSelect .select{font-size:13px;}
+    #sceneSelect .confirm{bottom:30px;font-size:15px;}
+  }
+
+  /* =========================================================
+     ① GAME
+     ========================================================= */
+  #sceneGame .screen{
+    width:100%; height:100%;
+    background:url("images/bg_town.png") center/cover no-repeat;
+    border-radius:inherit; position:relative; overflow:hidden;
+  }
+  #sceneGame .veil{
+    position:absolute; inset:0;
+    background:#000;
+    opacity:1;
+    z-index:999;
+    transition: opacity .9s ease;
+    pointer-events:none;
+  }
+  #sceneGame .veil.open{ opacity:0; }
+
+  #sceneGame .bgFade{
+    position:absolute; inset:0;
+    background:#000;
+    opacity:0;
+    pointer-events:none;
+    z-index:2;
+    transition: opacity .35s ease;
+  }
+  #sceneGame .bgFade.on{ opacity:0.9; }
+
+  #sceneGame .chara{
+    position:absolute;
+    left:50%;
+    bottom:20px;
+    height:500px;
+    user-select:none;
+    pointer-events:none;
+    opacity:0;
+    transform: translateX(-50%) translateY(6px);
+    transition: opacity .55s ease, transform .55s ease;
+    z-index:1;
+  }
+  #sceneGame .chara.show{
+    opacity:1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  #sceneGame .window{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:220px;
+    background:rgba(0,0,0,0.62);
+    border-top:3px solid rgba(255,255,255,0.14);
+    z-index:3;
+    opacity:0;
+    transform: translateY(10px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  #sceneGame .window.show{
+    opacity:1;
+    transform: translateY(0);
+  }
+
+  #sceneGame .windowInner{
+    height:100%;
+    padding:12px 24px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    box-sizing:border-box;
+    min-height:0;
+  }
+
+  #sceneGame .toprow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    color:#fff;
+    opacity:0.95;
+    font-size:16px;
+    gap:12px;
+  }
+
+  #sceneGame .leftTop{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+    flex:1;
+  }
+
+  #sceneGame .name{
+    font-weight:700;
+    color:#e8f2ff;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+
+  #sceneGame .meter{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+    flex:1;
+  }
+  #sceneGame .heart{ font-size:13px; opacity:0.9; flex-shrink:0; }
+
+  #sceneGame .meterBar{
+    flex:1;
+    height:8px;
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  #sceneGame .meterFill{
+    height:100%;
+    width:0%;
+    background:rgba(120,255,180,0.85);
+    transition: width .35s ease;
+  }
+
+  #sceneGame .qcount{
+    font-size:14px;
+    opacity:0.85;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+
+  #sceneGame .hr{
+    height:1px;
+    background:rgba(255,255,255,0.18);
+    width:100%;
+  }
+
+  #sceneGame .mainText{
+    margin-top:6px;
+    padding-left:4px;
+    color:#f2f2f2;
+    font-size:17px;
+    line-height:1.55;
+    text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    white-space:pre-wrap;
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+  }
+
+  #sceneGame .choices{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    flex-shrink:0;
+    margin-top:2px;
+  }
+
+  #sceneGame .choice{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#fff;
+    font-size:17px;
+    cursor:pointer;
+    user-select:none;
+    padding:1px 0;
+    opacity:0.92;
+    transform:translateY(2px);
+    -webkit-tap-highlight-color: transparent;
+  }
+  #sceneGame .choice:hover{
+    background:rgba(255,255,255,0.08);
+    filter:brightness(1.07);
+    transform:translateY(0px);
+  }
+  #sceneGame .pointer{
+    width:18px;
+    display:inline-block;
+    opacity:0.95;
+  }
+
+  @media (max-width: 700px) and (hover: none) and (pointer: coarse){
+    #sceneGame .chara{
+      height:380px;
+      bottom:140px;
+    }
+    #sceneGame .window{ height:260px; }
+    #sceneGame .windowInner{
+      padding:12px 16px 14px;
+      gap:6px;
+    }
+    #sceneGame .toprow{ font-size:14px; gap:10px; }
+    #sceneGame .qcount{ font-size:12px; }
+    #sceneGame .name{ max-width:44%; overflow:hidden; text-overflow:ellipsis; }
+
+    #sceneGame .mainText{
+      font-size:16px;
+      line-height:1.6;
+      padding-left:2px;
+      flex: 0 0 auto;
+      height: 1.6em;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      margin-top: 6px;
+    }
+    #sceneGame .choices{ margin-top: 8px; gap: 10px; padding-bottom: 0px; }
+    #sceneGame .choice{ font-size:16px; padding:4px 0; }
+  }
+
+  /* =========================================================
+     ④ ENDING
+     ========================================================= */
+  #sceneEnding{ font-family:"MS PGothic","Hiragino Kaku Gothic ProN",sans-serif; }
+
+  #sceneEnding .screen{
+    width:100%; height:100%;
+    background:url("images/bg_town2.png") center/cover no-repeat;
+    border-radius:inherit; position:relative; overflow:hidden;
+    transform-origin:center;
+  }
+
+  #sceneEnding .chara{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%) translateY(6px);
+    bottom:20px;
+    height:500px;
+    user-select:none;
+    pointer-events:none;
+    opacity:0;
+    transition: opacity .6s ease, transform .6s ease;
+    z-index:5;
+  }
+  #sceneEnding .chara.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  #sceneEnding .window{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:220px;
+    background:rgba(0,0,0,0.70);
+    border-top:3px solid rgba(255,255,255,0.18);
+    z-index:10;
+    opacity:0;
+    transform: translateY(10px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  #sceneEnding .window.show{ opacity:1; transform: translateY(0); }
+
+  #sceneEnding .toprow{
+    position:absolute; top:12px; left:24px; right:24px;
+    display:flex; align-items:center; justify-content:space-between;
+    color:#fff; opacity:0.95; font-size:16px;
+  }
+  #sceneEnding .name{ font-weight:700; }
+  #sceneEnding .badge{
+    font-size:12px; opacity:0.75;
+    border:1px solid rgba(255,255,255,0.25);
+    padding:4px 8px; border-radius:999px;
+    background:rgba(0,0,0,0.25);
+  }
+
+  #sceneEnding .message{
+    position:absolute; top:42px; left:24px; right:24px;
+    font-size:18px; line-height:1.65; color:#f2f2f2;
+    text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    white-space:normal;
+    opacity:0;
+    transition: opacity .35s ease;
+  }
+  #sceneEnding .message.show{ opacity:1; }
+
+  #sceneEnding .line-anim{
+    display:inline-block;
+    opacity:1;
+    white-space:nowrap;
+  }
+
+  #sceneEnding .veil{
+    position:absolute; inset:0;
+    background:#000;
+    opacity:1;
+    z-index:999;
+    transition: opacity 1.0s ease;
+    pointer-events:none;
+  }
+  #sceneEnding .veil.open{ opacity:0; }
+
+  #sceneEnding .screen.fadeout{ opacity:0; transition: opacity .55s ease; }
+
+  #sceneEnding .flash{
+    position:absolute;
+    inset:0;
+    background:#fff;
+    opacity:0;
+    pointer-events:none;
+    z-index:1999;
+  }
+  #sceneEnding .flash.play{ animation: end_flashIn 0.35s ease forwards; }
+  @keyframes end_flashIn{
+    0%{ opacity:0 }
+    30%{ opacity:1 }
+    100%{ opacity:0 }
+  }
+
+  #sceneEnding .resultOverlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    pointer-events:none;
+    z-index:2000;
+  }
+  #sceneEnding .resultOverlay.show{
+    pointer-events:auto;
+    animation: end_overlayIn .32s ease forwards;
+  }
+  @keyframes end_overlayIn{
+    from{ opacity:0; transform:scale(0.98); }
+    to{ opacity:1; transform:scale(1); }
+  }
+
+  #sceneEnding .resultOverlay.success{
+    background:
+      radial-gradient(circle at 20% 25%, rgba(120,255,210,0.18), transparent 48%),
+      radial-gradient(circle at 75% 30%, rgba(255,180,220,0.18), transparent 52%),
+      rgba(0,0,0,0.60);
+  }
+  #sceneEnding .resultOverlay.fail{
+    background:
+      radial-gradient(circle at 22% 28%, rgba(140,190,255,0.18), transparent 52%),
+      radial-gradient(circle at 78% 34%, rgba(190,160,255,0.14), transparent 56%),
+      rgba(0,0,0,0.66);
+  }
+
+  #sceneEnding .resultBox{
+    width:min(560px, 92%);
+    padding:18px 22px 16px;
+    border-radius:14px;
+    position:relative;
+    text-align:center;
+
+    background:
+      linear-gradient(180deg, rgba(90,110,180,0.92), rgba(40,45,70,0.92));
+    box-shadow:
+      0 22px 60px rgba(0,0,0,0.55),
+      0 0 0 2px rgba(255,255,255,0.18) inset;
+    border:1px solid rgba(10,15,30,0.65);
+
+    transform: translateY(10px) scale(0.985);
+    opacity:0;
+    animation: end_boxPop .42s cubic-bezier(.2,.9,.25,1.25) forwards;
+    overflow:hidden;
+  }
+  @keyframes end_boxPop{ to{ opacity:1; transform: translateY(0) scale(1); } }
+
+  #sceneEnding .resultBox::after{
+    content:"";
+    position:absolute;
+    inset:10px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.22);
+    pointer-events:none;
+  }
+
+  #sceneEnding .resultTitle{
+    position:relative;
+    font-size:34px;
+    letter-spacing:2px;
+    margin:6px 0 6px;
+    font-weight:900;
+    color:#fff;
+    text-shadow:
+      0 2px 0 rgba(0,0,0,0.75),
+      0 0 12px rgba(255,255,255,0.25);
+  }
+  #sceneEnding .success .resultTitle{
+    text-shadow:
+      0 2px 0 rgba(0,0,0,0.78),
+      0 0 14px rgba(255,160,220,0.35),
+      0 0 22px rgba(140,255,210,0.22);
+  }
+  #sceneEnding .fail .resultTitle{
+    text-shadow:
+      0 2px 0 rgba(0,0,0,0.78),
+      0 0 14px rgba(150,190,255,0.28),
+      0 0 22px rgba(190,160,255,0.18);
+  }
+
+  #sceneEnding .resultSub{
+    position:relative;
+    color:rgba(255,255,255,0.88);
+    font-size:13px;
+    letter-spacing:0.6px;
+    margin-bottom:12px;
+  }
+
+  #sceneEnding .resultMenu{
+    position:relative;
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+
+  #sceneEnding .resultChoice{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:190px;
+    justify-content:center;
+
+    padding:10px 14px;
+    border-radius:10px;
+    cursor:pointer;
+    user-select:none;
+
+    background:linear-gradient(180deg, rgba(35,45,85,0.75), rgba(20,25,45,0.78));
+    border:1px solid rgba(255,255,255,0.22);
+    box-shadow:
+      0 8px 18px rgba(0,0,0,0.35),
+      0 0 0 1px rgba(0,0,0,0.45) inset;
+
+    color:#fff;
+    font-size:16px;
+
+    transition: transform .05s ease, filter .12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #sceneEnding .resultChoice:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+  #sceneEnding .resultChoice:active{ transform:translateY(0px); filter:brightness(0.98); }
+
+  #sceneEnding .caret{ width:18px; text-align:center; opacity:0; }
+  #sceneEnding .resultChoice.active .caret{ opacity:1; animation: end_blink .9s steps(2,end) infinite; }
+  @keyframes end_blink{ 50%{opacity:0;} }
+
+  #sceneEnding .resultHint{
+    position:relative;
+    margin-top:10px;
+    color:rgba(255,255,255,0.78);
+    font-size:12px;
+    letter-spacing:.6px;
+    white-space:nowrap;
+    text-align:center;
+  }
+
+  #sceneEnding .endingPoster{
+    position:absolute;
+    inset:0;
+    z-index:3000;
+    background:#000;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity .6s ease;
+  }
+  #sceneEnding .endingPoster.show{
+    opacity:1;
+    pointer-events:auto;
+  }
+  #sceneEnding .endingPoster img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+  #sceneEnding .posterHint{
+    position:absolute;
+    left:50%;
+    bottom:16px;
+    transform:translateX(-50%);
+    color:rgba(255,255,255,0.88);
+    font-size:12px;
+    letter-spacing:.8px;
+    padding:6px 10px;
+    border-radius:999px;
+    background:rgba(0,0,0,0.35);
+    border:1px solid rgba(255,255,255,0.18);
+    text-shadow:0 2px 6px rgba(0,0,0,0.6);
+    white-space:nowrap;
+    text-align:center;
+  }
+
+  @media (max-width: 700px) and (hover:none) and (pointer: coarse){
+    #sceneEnding .chara{
+      height:380px;
+      bottom:120px;
+    }
+
+    #sceneEnding .window{
+      height:260px;
+      background:rgba(0,0,0,0.66);
+    }
+
+    #sceneEnding .toprow{
+      top:10px; left:14px; right:14px;
+      font-size:14px;
+    }
+    #sceneEnding .badge{ font-size:11px; padding:3px 7px; }
+
+    #sceneEnding .message{
+      top:40px; left:14px; right:14px;
+      font-size:15px;
+      line-height:1.6;
+      height:auto;
+      overflow:visible;
+      white-space:normal;
+    }
+
+    #sceneEnding .resultBox{
+      width:min(320px, 92%);
+      padding:14px 14px 12px;
+      border-radius:12px;
+    }
+    #sceneEnding .resultTitle{ font-size:26px; letter-spacing:1px; }
+    #sceneEnding .resultSub{ font-size:12px; margin-bottom:10px; }
+    #sceneEnding .resultChoice{ min-width:140px; font-size:15px; padding:9px 12px; }
+
+    #sceneEnding .resultHint{
+      font-size:11px;
+      letter-spacing:0;
+      transform:scale(0.92);
+      transform-origin:center;
+    }
+
+    #sceneEnding .posterHint{
+      font-size:12px;
+      letter-spacing:0;
+      transform:translateX(-50%) scale(0.92);
+      transform-origin:center;
+    }
+  }
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="frame" id="frame">
+      <!-- ✅ BGM -->
+      <audio id="bgm" src="sounds/bgm_main.mp3" loop preload="auto"></audio>
+
+      <!-- ======================================================
+           ⑤ TITLE
+      ======================================================= -->
+      <section class="scene active" id="sceneTitle" aria-label="title">
+        <div class="screen" id="titleScreen">
+          <div class="bg"></div>
+
+          <div class="titleArea">
+            <img src="./images/title_logo.png" alt="三丁目ラブストーリー">
+          </div>
+
+          <div class="menu">
+            <div class="startBox" id="startBtn">
+              <div class="pointer">▶</div>
+              <div>START</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================
+           ② SELECT
+      ======================================================= -->
+      <section class="scene" id="sceneSelect" aria-label="select">
+        <div class="flash" id="selFlash"></div>
+
+        <div class="screen" id="selScreen">
+          <div class="confirm" id="selConfirm">ゲームスタート！</div>
+
+          <div class="cards">
+            <div class="card" data-route="gaia">
+              <img src="images/gaia.png" alt="gaia">
+              <div class="namebox">
+                <div class="info">藤井凱也 / Gt・Vo</div>
+                <div class="select">この人にする</div>
+              </div>
+            </div>
+
+            <div class="card" data-route="kai">
+              <img src="images/kai.png" alt="kai">
+              <div class="namebox">
+                <div class="info">和泉海 / Dr</div>
+                <div class="select">この人にする</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================
+           ① GAME（本編）
+      ======================================================= -->
+      <section class="scene" id="sceneGame" aria-label="game">
+        <div class="screen" id="gameScreen">
+          <div class="veil" id="gameVeil"></div>
+          <div class="bgFade" id="gameBgFade"></div>
+
+          <img id="gameChara" class="chara" alt="chara" />
+
+          <div class="window" id="gameWindow">
+            <div class="windowInner">
+              <div class="toprow">
+                <div class="leftTop">
+                  <div class="name" id="gameName"></div>
+                  <div class="meter">
+                    <div class="heart">♥</div>
+                    <div class="meterBar"><div class="meterFill" id="meterFill"></div></div>
+                  </div>
+                </div>
+                <div class="qcount" id="qcount"></div>
+              </div>
+
+              <div class="hr"></div>
+              <div class="mainText" id="mainText"></div>
+              <div class="hr"></div>
+              <div class="choices" id="choices"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================
+           ④ ENDING（完成版）
+      ======================================================= -->
+      <section class="scene" id="sceneEnding" aria-label="ending">
+        <div class="screen" id="endScreen">
+          <div class="veil" id="endVeil"></div>
+          <div class="flash" id="endFlash"></div>
+
+          <img id="endChara" class="chara" alt="chara" />
+
+          <div class="resultOverlay" id="endResultOverlay" aria-hidden="true">
+            <div class="resultBox">
+              <div class="resultTitle" id="endResultTitle"></div>
+              <div class="resultSub" id="endResultSub"></div>
+
+              <div class="resultMenu" id="endResultMenu">
+                <div class="resultChoice" data-act="retry">
+                  <span class="caret">▶</span><span>もう一回</span>
+                </div>
+                <div class="resultChoice" data-act="title">
+                  <span class="caret">▶</span><span>タイトルへ</span>
+                </div>
+              </div>
+
+              <div class="resultHint">← → で選択 / Enter で決定</div>
+            </div>
+          </div>
+
+          <div class="window" id="endWindow">
+            <div class="toprow">
+              <div class="name" id="endName"></div>
+              <div class="badge">ENDING</div>
+            </div>
+
+            <div class="message" id="endMsg">
+              <span id="endLine1"></span><br>
+              <span id="endLine2" class="line-anim"></span>
+            </div>
+          </div>
+
+          <div class="endingPoster" id="endPoster" aria-hidden="true">
+            <picture>
+              <source media="(max-width: 700px) and (hover:none) and (pointer:coarse)" srcset="images/ending_sp.jpg">
+              <img src="images/ending_pc.jpg" alt="ending poster">
+            </picture>
+            <div class="posterHint">タップ / Enter でタイトルへ</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+<script>
+/* =========================
+   ✅ シーン切替
+========================= */
+const scenes = {
+  title: document.getElementById("sceneTitle"),
+  select: document.getElementById("sceneSelect"),
+  game: document.getElementById("sceneGame"),
+  ending: document.getElementById("sceneEnding"),
+};
+function showScene(name){
+  Object.values(scenes).forEach(s => s.classList.remove("active"));
+  scenes[name].classList.add("active");
+}
+
+/* =========================
+   ✅ BGM（確実版）
+   - タイトル入場で先頭から再生を「試す」
+   - ブロックされたら：タイトル画面の最初のタップ/Enter/Spaceで解錠→先頭から再生
+   - エンディング→タイトル復帰でも onEnterTitle() で先頭から
+========================= */
+/* =========================
+   ✅ BGM（超確実版）
+   - タイトル入場で再生を試す（PCで鳴ることあり）
+   - スマホは基本ブロック → タイトルで最初の操作で解錠して鳴らす
+   - 解錠済みならタイトル復帰でも確実に先頭から鳴る
+========================= */
+const bgm = document.getElementById("bgm");
+bgm.volume = 0.35;
+
+let bgmUnlocked = false;   // ユーザー操作で一度でも再生できたか
+
+function resetBgmToStart(){
+  try { bgm.currentTime = 0; } catch(e){}
+}
+
+async function tryPlayBgmFromTop(){
+  resetBgmToStart();
+  try {
+    await bgm.play();
+    bgmUnlocked = true; // ここで「解錠済み」にする（超重要）
+  } catch(e) {
+    // 自動再生ブロック時はここに来る（スマホで普通）
+  }
+}
+
+/* タイトルに入ったら「とりあえず再生」を試す */
+function onEnterTitle(){
+  // 解錠済みなら確実に鳴らせる
+  // 解錠前でもPCなら鳴る可能性があるので試す
+  tryPlayBgmFromTop();
+}
+
+/* タイトル画面での最初の操作で確実に鳴らす */
+function unlockBgmIfTitle(){
+  if(!scenes.title.classList.contains("active")) return;
+  if(bgmUnlocked) return;
+  tryPlayBgmFromTop();
+}
+
+/* タイトル画面のどこをタップしてもOK */
+window.addEventListener("pointerdown", unlockBgmIfTitle, { passive:true });
+window.addEventListener("keydown", (e)=>{
+  if(e.key === "Enter" || e.key === " ") unlockBgmIfTitle();
+});
+
+
+/* =========================
+   ✅ タイトル演出を毎回再生
+========================= */
+const titleScene = document.getElementById("sceneTitle");
+function runTitleAnim(){
+  titleScene.classList.remove("runAnim");
+  void titleScene.offsetWidth;
+  titleScene.classList.add("runAnim");
+}
+
+/* =========================
+   ✅ データ
+========================= */
+const charaData = {
+  gaia:{ name:"藤井凱也", img:"images/gaia.png" },
+  kai:{  name:"和泉海",   img:"images/kai.png"  }
+};
+
+const QUESTIONS = {
+  gaia: [
+    { q:"待ち合わせに30分遅刻してきた！", bg:"images/bg_town.png", a:[
+      { t:"許す", score:2, next:"……ありがとう。一旦殴って欲しい。" },
+      { t:"怒る", score:1, next:"ごめん。ジュース奢ります。" },
+      { t:"帰る", score:-1, next:"ごめんよ〜……。" }
+    ]},
+    { q:"デート場所が古い喫茶店だった！", bg:"images/bg_kissa.png", a:[
+      { t:"「え〜！すてき！こういうの大好き！」", score:2, next:"ほんま！よかった〜。" },
+      { t:"「めっちゃ腹減ってんだけど(怒)」", score:0, next:"ご飯全種類食べようね！" },
+      { t:"帰る", score:-1, next:"ごめんよ〜……。" }
+    ]},
+    { q:"いよいよ喫茶店で注文！", bg:"images/bg_kissa.png", a:[
+      { t:"クリームソーダとチョコケーキ", score:1, next:"どっちもちょうだい！" },
+      { t:"コーヒーとコーヒーゼリー", score:2, next:"キュン死！" },
+      { t:"帰る", score:-1, next:"ごめんよ〜……。" }
+    ]}
+  ],
+  kai: [
+    { q:"待ち合わせに可愛い服を着て来た！", bg:"images/bg_town.png", a:[
+      { t:"褒める", score:2, next:"……ありがとう。" },
+      { t:"あえて触れない", score:-1, next:"……まあ、いいけど。" },
+      { t:"悔しがる", score:1, next:"……ありがとう。" }
+    ]},
+    { q:"デート場所がラーメン二郎だった！", bg:"images/bg_ramen.png", a:[
+      { t:"「私もラーメン食べたかった！」", score:2, next:"ならよかった。" },
+      { t:"「にんにく嫌いかも、、？」", score:0, next:"じゃあ、少なめにしよ。" },
+      { t:"無言でリンゴジュースを買いに行く", score:3, next:"……ありがとう。" }
+    ]},
+    { q:"いよいよ注文！何頼む？", bg:"images/bg_ramen.png", a:[
+      { t:"ラーメン小 にんにくなし", score:1, next:"無難だね。" },
+      { t:"ラーメン大 野菜油にんにくマシマシ", score:2, next:"……本気じゃん。" },
+      { t:"まぜそば", score:0, next:"……ありがとう。" }
+    ]}
+  ]
+};
+
+/* =========================
+   ✅ ⑤ TITLE → ② SELECT
+========================= */
+const titleScreen = document.getElementById("titleScreen");
+const startBtn = document.getElementById("startBtn");
+
+function goToSelect(){
+  titleScreen.classList.add("fadeout");
+  setTimeout(()=>{
+    titleScreen.classList.remove("fadeout");
+    showScene("select");
+  }, 280);
+}
+startBtn.addEventListener("click", goToSelect);
+window.addEventListener("keydown", (e)=>{
+  if(scenes.title.classList.contains("active") && e.key==="Enter") goToSelect();
+});
+
+/* =========================
+   ✅ ② SELECT → ① GAME
+========================= */
+const selScreen = document.getElementById("selScreen");
+const selFlash = document.getElementById("selFlash");
+const selConfirm = document.getElementById("selConfirm");
+const selCards = [...document.querySelectorAll("#sceneSelect .card")];
+
+let selCur = 0;
+let selLocked = false;
+let routeState = "gaia";
+
+function selUpdate(){
+  selCards.forEach((c,i)=> c.classList.toggle("active", i===selCur));
+}
+selUpdate();
+
+function decideRoute(route){
+  if(selLocked) return;
+  selLocked = true;
+  routeState = route;
+
+  selConfirm.classList.add("show");
+
+  selFlash.classList.remove("on");
+  void selFlash.offsetWidth;
+  selFlash.classList.add("on");
+
+  setTimeout(()=> selScreen.classList.add("fadeout"), 260);
+  setTimeout(()=>{
+    selScreen.classList.remove("fadeout");
+    selConfirm.classList.remove("show");
+    selLocked = false;
+    startGame(routeState);
+  }, 900);
+}
+
+selCards.forEach((card,i)=>{
+  card.addEventListener("click", ()=>{
+    if(selLocked) return;
+    selCur = i;
+    selUpdate();
+  });
+
+  card.querySelector(".select").addEventListener("click", (e)=>{
+    e.stopPropagation();
+    if(selLocked) return;
+    selCur = i;
+    selUpdate();
+    decideRoute(card.dataset.route);
+  });
+});
+
+window.addEventListener("keydown", (e)=>{
+  if(!scenes.select.classList.contains("active")) return;
+  if(selLocked) return;
+
+  if(e.key === "ArrowLeft"){
+    selCur = (selCur + selCards.length - 1) % selCards.length;
+    selUpdate();
+    e.preventDefault();
+  }
+  if(e.key === "ArrowRight"){
+    selCur = (selCur + 1) % selCards.length;
+    selUpdate();
+    e.preventDefault();
+  }
+  if(e.key === "Enter"){
+    decideRoute(selCards[selCur].dataset.route);
+    e.preventDefault();
+  }
+});
+
+/* =========================
+   ✅ ① GAME 本体
+========================= */
+const $gameName = document.getElementById("gameName");
+const $gameChara = document.getElementById("gameChara");
+const $qcount = document.getElementById("qcount");
+const $mainText = document.getElementById("mainText");
+const $choices = document.getElementById("choices");
+const $meterFill = document.getElementById("meterFill");
+
+const $gameVeil = document.getElementById("gameVeil");
+const $gameWindow = document.getElementById("gameWindow");
+const $gameScreen = document.getElementById("gameScreen");
+const $gameBgFade = document.getElementById("gameBgFade");
+
+let typingTimer = null;
+let locked = false;
+
+function typeSet(el, text, speed=28, done){
+  clearInterval(typingTimer);
+  const s = String(text ?? "");
+  el.textContent = "";
+  locked = true;
+
+  let i = 0;
+  typingTimer = setInterval(()=>{
+    el.textContent += s[i] ?? "";
+    i++;
+    if(i >= s.length){
+      clearInterval(typingTimer);
+      typingTimer = null;
+      locked = false;
+      done && done();
+    }
+  }, speed);
+}
+
+const clamp = (n,a,b)=> Math.max(a, Math.min(b, n));
+async function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+let gameState = null;
+
+function resetGameVisual(){
+  $gameVeil.classList.remove("open");
+  $gameWindow.classList.remove("show");
+  $gameChara.classList.remove("show");
+  $choices.innerHTML = "";
+  $mainText.textContent = "";
+  $qcount.textContent = "";
+}
+
+async function changeBg(url){
+  if(!url) return;
+  const cur = $gameScreen.dataset.bg || "";
+  if(cur === url) return;
+
+  if(!gameState.firstBgDone){
+    $gameScreen.style.background = `url("${url}") center/cover no-repeat`;
+    $gameScreen.dataset.bg = url;
+    gameState.firstBgDone = true;
+    return;
+  }
+
+  $gameBgFade.classList.add("on");
+  await sleep(200);
+  $gameScreen.style.background = `url("${url}") center/cover no-repeat`;
+  $gameScreen.dataset.bg = url;
+  await sleep(80);
+  $gameBgFade.classList.remove("on");
+}
+
+function updateMeter(){
+  const MIN_SCORE = -3;
+  const MAX_SCORE = 6;
+  const s = clamp(gameState.total, MIN_SCORE, MAX_SCORE);
+  const pct = ((s - MIN_SCORE) / (MAX_SCORE - MIN_SCORE)) * 100;
+  $meterFill.style.width = `${pct}%`;
+}
+
+function renderChoices(item){
+  $choices.innerHTML = "";
+  item.a.forEach((opt, idx)=>{
+    const btn = document.createElement("div");
+    btn.className = "choice";
+    btn.innerHTML = `<span class="pointer">▶</span><span>${opt.t}</span>`;
+    btn.onclick = ()=> { if(!locked) onChoose(opt); };
+
+    btn.style.opacity = 0;
+    $choices.appendChild(btn);
+
+    setTimeout(()=>{
+      btn.style.transition = "opacity 0.25s";
+      btn.style.opacity = 1;
+    }, idx * 260);
+  });
+}
+
+async function renderQuestion(){
+  const item = gameState.list[gameState.qi];
+  $qcount.textContent = `Q${gameState.qi+1}/${gameState.list.length}`;
+
+  await changeBg(item.bg || "images/bg_town.png");
+
+  typeSet($mainText, item.q, 40, () => {
+    setTimeout(()=> renderChoices(item), 300);
+  });
+}
+
+function onChoose(opt){
+  $choices.innerHTML = "";
+
+  gameState.total += (opt.score ?? 0);
+  updateMeter();
+
+  typeSet($mainText, `${opt.next || "……"}`, 40);
+
+  setTimeout(()=>{
+    gameState.qi++;
+    if(gameState.qi < gameState.list.length){
+      renderQuestion();
+    }else{
+      startEnding(gameState.route, gameState.total);
+    }
+  }, 900);
+}
+
+function startGame(route){
+  showScene("game");
+
+  resetGameVisual();
+
+  const r = charaData[route] ? route : "gaia";
+  $gameName.textContent = charaData[r].name;
+  $gameChara.src = charaData[r].img;
+
+  gameState = {
+    route: r,
+    list: QUESTIONS[r],
+    qi: 0,
+    total: 0,
+    firstBgDone: false,
+  };
+
+  updateMeter();
+
+  setTimeout(() => $gameVeil.classList.add("open"), 150);
+  setTimeout(() => $gameWindow.classList.add("show"), 650);
+  setTimeout(() => $gameChara.classList.add("show"), 780);
+  setTimeout(() => renderQuestion(), 950);
+}
+
+/* =========================
+   ✅ ④ ENDING
+========================= */
+const endScreen = document.getElementById("endScreen");
+const endVeil   = document.getElementById("endVeil");
+const endFlash  = document.getElementById("endFlash");
+
+const endWindow = document.getElementById("endWindow");
+const endNameEl   = document.getElementById("endName");
+const endCharaEl  = document.getElementById("endChara");
+const endMsgEl    = document.getElementById("endMsg");
+const endLine1El  = document.getElementById("endLine1");
+const endLine2El  = document.getElementById("endLine2");
+
+const endResultOverlay = document.getElementById("endResultOverlay");
+const endResultTitle   = document.getElementById("endResultTitle");
+const endResultSub     = document.getElementById("endResultSub");
+const endResultChoices = Array.from(document.querySelectorAll("#sceneEnding .resultChoice"));
+
+const endPoster = document.getElementById("endPoster");
+
+let endRoute = "gaia";
+let endScore = 0;
+let endResultCur = 0;
+
+function endingLine(route, total){
+  if(route === "gaia"){
+    if(total < 0) return "ごめん！トイレ行きたいし帰るわ！";
+    if(total < 3) return "ほなまた！";
+    return "やっぱ僕は君がいいんだ";
+  }else{
+    if(total < 0) return "……ありがとうございました";
+    if(total < 3) return "……ありがとうございました";
+    return "やっぱ僕は君がいいんだ";
+  }
+}
+
+function resetEndingUI(){
+  endVeil.classList.remove("open");
+  endWindow.classList.remove("show");
+  endCharaEl.classList.remove("show");
+  endMsgEl.classList.remove("show");
+
+  endLine1El.textContent = "";
+  endLine2El.textContent = "";
+
+  endResultOverlay.className = "resultOverlay";
+  endResultOverlay.classList.remove("show");
+  endResultOverlay.setAttribute("aria-hidden", "true");
+
+  endPoster.classList.remove("show");
+  endPoster.setAttribute("aria-hidden", "true");
+}
+
+function typeWriter(el, text, speed){
+  el.textContent = "";
+  let i = 0;
+  const timer = setInterval(() => {
+    el.textContent += text.charAt(i);
+    i++;
+    if(i >= text.length){
+      clearInterval(timer);
+    }
+  }, speed);
+  return timer;
+}
+
+function setResultActive(){
+  endResultChoices.forEach((el, i) => el.classList.toggle("active", i === endResultCur));
+}
+
+function playEndFlash(){
+  endFlash.classList.remove("play");
+  void endFlash.offsetWidth;
+  endFlash.classList.add("play");
+}
+
+function showPoster(){
+  endResultOverlay.classList.remove("show");
+  endResultOverlay.setAttribute("aria-hidden", "true");
+
+  endPoster.classList.add("show");
+  endPoster.setAttribute("aria-hidden", "false");
+}
+
+function goTitleFromEnding(){
+  endScreen.classList.add("fadeout");
+  setTimeout(()=>{
+    endScreen.classList.remove("fadeout");
+    showScene("title");
+    runTitleAnim();
+    onEnterTitle(); // ✅ タイトル戻りで先頭からBGM
+  }, 520);
+}
+
+function doResultAction(act){
+  if(act === "retry" || act === "title"){
+    showPoster();
+    return;
+  }
+}
+
+function showResult(){
+  const SUCCESS_LINE = 4;
+  const isSuccess = endScore >= SUCCESS_LINE;
+
+  playEndFlash();
+
+  setTimeout(()=>{
+    endResultOverlay.classList.add(isSuccess ? "success" : "fail");
+    endResultOverlay.classList.add("show");
+    endResultOverlay.setAttribute("aria-hidden", "false");
+
+    endResultTitle.textContent = isSuccess ? "デート成功！" : "デート失敗！";
+    endResultSub.textContent = isSuccess
+      ? "いい感じに距離が縮まった…！"
+      : "気まずい空気が流れてしまった…";
+
+    endResultCur = 0;
+    setResultActive();
+  }, 260);
+}
+
+function showEndingLines(){
+  const line1 = "……静かな帰り道。";
+  const line2 = endingLine(endRoute, endScore);
+
+  endLine1El.textContent = line1;
+
+  const startDelay = 600;
+  const typeSpeed  = 50;
+
+  setTimeout(() => {
+    typeWriter(endLine2El, line2, typeSpeed);
+  }, startDelay);
+
+  const typeTime = line2.length * typeSpeed;
+  const buffer   = 500;
+  return startDelay + typeTime + buffer;
+}
+
+function startEnding(route, score){
+  showScene("ending");
+
+  endRoute = charaData[route] ? route : "gaia";
+  endScore = Number(score || 0);
+
+  resetEndingUI();
+
+  endNameEl.textContent = charaData[endRoute].name;
+  endCharaEl.src = charaData[endRoute].img;
+
+  setTimeout(()=> endVeil.classList.add("open"), 250);
+  setTimeout(()=> endWindow.classList.add("show"), 850);
+  setTimeout(()=> endCharaEl.classList.add("show"), 980);
+
+  setTimeout(()=>{
+    endMsgEl.classList.add("show");
+    const waitMs = showEndingLines();
+    setTimeout(()=> showResult(), waitMs);
+  }, 1250);
+}
+
+/* end choices events */
+endResultChoices.forEach((el, i) => {
+  el.addEventListener("mouseenter", ()=>{ endResultCur = i; setResultActive(); });
+  el.addEventListener("click", ()=> doResultAction(el.dataset.act));
+});
+
+/* ending key control */
+window.addEventListener("keydown", (e)=>{
+  if(!scenes.ending.classList.contains("active")) return;
+
+  if(endPoster.classList.contains("show")){
+    if(e.key === "Enter") goTitleFromEnding();
+    return;
+  }
+
+  if(!endResultOverlay.classList.contains("show")) return;
+
+  if(e.key === "ArrowLeft"){
+    endResultCur = (endResultCur + endResultChoices.length - 1) % endResultChoices.length;
+    setResultActive();
+    e.preventDefault();
+  }
+  if(e.key === "ArrowRight"){
+    endResultCur = (endResultCur + 1) % endResultChoices.length;
+    setResultActive();
+    e.preventDefault();
+  }
+  if(e.key === "Enter"){
+    doResultAction(endResultChoices[endResultCur].dataset.act);
+    e.preventDefault();
+  }
+});
+
+/* poster click/tap -> title */
+endPoster.addEventListener("click", goTitleFromEnding);
+
+/* =========================
+   ✅ 初期：タイトル表示
+========================= */
+showScene("title");
+runTitleAnim();
+onEnterTitle();
+</script>
+</body>
+</html>
