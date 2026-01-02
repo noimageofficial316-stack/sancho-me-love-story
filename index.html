@@ -7,14 +7,16 @@
 
 <style>
   html,body{ margin:0; background:#000; font-family:"MS PGothic","Hiragino Kaku Gothic ProN",sans-serif; }
-  .wrap{
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:16px;
-    box-sizing:border-box;
-  }
+.wrap{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  box-sizing:border-box;
+  height:100dvh;   /* ✅ iPhoneのvh罠対策 */
+}
 
   .frame{
     width:960px; height:540px;
@@ -941,6 +943,9 @@
   </div>
 
 <script>
+  // ✅ iOSの“謎スクロール”を完全に止める（復活）
+const frame = document.getElementById("frame");
+frame.addEventListener("touchmove", (e)=> e.preventDefault(), { passive:false });
 /* =========================
    ✅ シーン切替
 ========================= */
@@ -1001,7 +1006,7 @@ function unlockBgmIfTitle(){
 }
 
 /* タイトル画面のどこをタップしてもOK */
-window.addEventListener("pointerdown", unlockBgmIfTitle, { passive:true });
+window.addEventListener("pointerdown", unlockBgmIfTitle, { passive:false });
 window.addEventListener("keydown", (e)=>{
   if(e.key === "Enter" || e.key === " ") unlockBgmIfTitle();
 });
@@ -1087,6 +1092,29 @@ const selScreen = document.getElementById("selScreen");
 const selFlash = document.getElementById("selFlash");
 const selConfirm = document.getElementById("selConfirm");
 const selCards = [...document.querySelectorAll("#sceneSelect .card")];
+
+/* =========================
+   ✅ グローバルリセット（超重要）
+   - Ending→Title の時に全部初期化する
+========================= */
+function hardResetToTitle(){
+  // ENDING
+  resetEndingUI();
+
+  // SELECT
+  selLocked = false;
+  selScreen.classList.remove("fadeout");
+  selConfirm.classList.remove("show");
+  selFlash.classList.remove("on");
+  selCur = 0;
+  selUpdate();
+
+  // GAME
+  resetGameVisual();
+
+  // TITLE
+  titleScreen.classList.remove("fadeout");
+}
 
 let selCur = 0;
 let selLocked = false;
@@ -1393,15 +1421,25 @@ function goTitleFromEnding(){
   endScreen.classList.add("fadeout");
   setTimeout(()=>{
     endScreen.classList.remove("fadeout");
+
+    hardResetToTitle();     // ✅ 完全初期化
     showScene("title");
     runTitleAnim();
-    onEnterTitle(); // ✅ タイトル戻りで先頭からBGM
+    onEnterTitle();
+
+    setTimeout(()=> startBtn.focus?.(), 50);
   }, 520);
 }
 
 function doResultAction(act){
-  if(act === "retry" || act === "title"){
+  if(act === "retry"){
     showPoster();
+    endPoster.dataset.next = "select";
+    return;
+  }
+  if(act === "title"){
+    showPoster();
+    endPoster.dataset.next = "title";
     return;
   }
 }
@@ -1501,7 +1539,18 @@ window.addEventListener("keydown", (e)=>{
 });
 
 /* poster click/tap -> title */
-endPoster.addEventListener("click", goTitleFromEnding);
+endPoster.addEventListener("click", () => {
+  const next = endPoster.dataset.next;
+
+  if(next === "select"){
+    hardResetToTitle();
+    showScene("select");
+  }
+
+  if(next === "title"){
+    goTitleFromEnding();
+  }
+});
 
 /* =========================
    ✅ 初期：タイトル表示
