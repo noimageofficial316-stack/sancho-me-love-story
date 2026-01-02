@@ -1000,7 +1000,7 @@ const bgm = document.getElementById("bgm");
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 // 音量（ここだけ触ればOK）
-bgm.volume = isMobile ? 0.05 : 0.06;
+bgm.volume = isMobile ? 0.01 : 0.01;
 bgm.muted = false;
 bgm.playsInline = true;
 
@@ -1008,10 +1008,11 @@ function resetBgmToStart(){
   try { bgm.currentTime = 0; } catch(e){}
 }
 
-function unlockAndPlayFromTop(){
-  try { bgm.pause(); } catch(e){}
-  resetBgmToStart();
+function unlockAndPlay(){
+  // もう鳴ってるなら何もしない（ここが超重要）
+  if (!bgm.paused) return;
 
+  // paused（止まってる）時だけ再生開始
   try { bgm.load(); } catch(e){}
 
   const p = bgm.play();
