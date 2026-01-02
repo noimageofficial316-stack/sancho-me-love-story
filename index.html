@@ -1546,6 +1546,9 @@ endPoster.addEventListener("click", () => {
   const next = endPoster.dataset.next;
 
   if(next === "select"){
+    // ✅ もう一回でもBGMを先頭から
+    tryPlayBgmFromTop();
+
     hardResetToTitle();
     showScene("select");
   }
