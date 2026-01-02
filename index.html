@@ -1022,62 +1022,6 @@ async function unlockAndPlay(){
   }
 }
 
-async function tryPlayBgmFromTop(){
-  ensureAudioGraph();
-
-  // iOSはAudioContextをユーザー操作でresume必要
-  if (audioCtx && audioCtx.state === "suspended") {
-    try { await audioCtx.resume(); } catch(e){}
-  }
-
-  resetBgmToStart();
-  applyBgmGain();
-
-  try {
-    await bgm.play();
-    bgmUnlocked = true;
-  } catch(e) {
-    // 自動再生ブロック時はここ
-  }
-}
-
-function onEnterTitle(){
-  // iOSはユーザー操作なし再生が死ぬので、ここでは何もしない
-  // 解錠後（bgmUnlocked=true）だけ鳴らす
-  if (bgmUnlocked) tryPlayBgmFromTop();
-}
-
-async function unlockBgmIfTitle(){
-  if (bgmUnlocked) return;
-
-  ensureAudioGraph();
-
-  // 先に停止＆先頭へ（即）
-  try { bgm.pause(); } catch(e){}
-  resetBgmToStart();
-  applyBgmGain();
-
-  // resume開始（待ちすぎない）
-  const resumeP =
-    (audioCtx && audioCtx.state === "suspended")
-      ? audioCtx.resume().catch(()=>{})
-      : Promise.resolve();
-
-  // playもすぐ投げる
-  const playP = bgm.play().catch(()=>{});
-
-  // 両方が落ち着いたら解錠扱い
-  await Promise.all([resumeP, playP]);
-
-  // 再生が始まってたら解錠
-  if (!bgm.paused) bgmUnlocked = true;
-}
-
-window.addEventListener("keydown", (e)=>{
-  if(e.key === "Enter" || e.key === " ") unlockBgmIfTitle();
-});
-
-
 /* =========================
    ✅ タイトル演出を毎回再生
 ========================= */
@@ -1156,14 +1100,6 @@ startBtn.addEventListener("pointerdown", () => {
     unlockAndPlay();
   }, { capture:true, passive:false });
 });
-
-// ✅ タイトル画面を押した瞬間だけBGMを解錠（最速）
-titleScreen.addEventListener("pointerdown", (e) => {
-  // タイトル表示中だけ
-  if (!scenes.title.classList.contains("active")) return;
-
-  unlockBgmIfTitle();  // ← 既存の関数を呼ぶだけ
-}, { passive: true, capture: true });
 
 function goToSelect(){
   titleScreen.classList.add("fadeout");
@@ -1633,13 +1569,14 @@ window.addEventListener("keydown", (e)=>{
 endPoster.addEventListener("click", () => {
   const next = endPoster.dataset.next;
 
-  if(next === "select"){
-    // ✅ もう一回でもBGMを先頭から
-    tryPlayBgmFromTop();
+if(next === "select"){
+  bgm.pause();
+  try { bgm.currentTime = 0; } catch(e) {}
+  unlockAndPlay();
 
-    hardResetToTitle();
-    showScene("select");
-  }
+  hardResetToTitle();
+  showScene("select");
+}
 
   if(next === "title"){
     goTitleFromEnding();
@@ -1651,7 +1588,6 @@ endPoster.addEventListener("click", () => {
 ========================= */
 showScene("title");
 runTitleAnim();
-onEnterTitle();
 </script>
 </body>
 </html>
