@@ -994,36 +994,80 @@ function runTitleAnim(){
 /* =========================
    ✅ BGM（iOS完全対応・安全版）
 ========================= */
+/* =========================
+   ✅ BGM（iOS安定版：スマホだけ小さく）
+========================= */
 const bgm = document.getElementById("bgm");
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-// 🔊 音量調整（スマホだけ小さく）
-const BGM_VOLUME_PC = 0.015;     // PC用
-const BGM_VOLUME_MOBILE = 0.003; // スマホ用（かなり控えめ）
-
-bgm.volume = isMobile ? BGM_VOLUME_MOBILE : BGM_VOLUME_PC;
 bgm.muted = false;
-
+bgm.loop = true;
+bgm.preload = "auto";
 bgm.setAttribute("playsinline", "");
 bgm.setAttribute("webkit-playsinline", "");
 
-let bgmUnlocked = false;
+// 目標音量
+const VOL_PC = 0.015;         // PC/Android用（audio.volumeでOK）
+const GAIN_IOS_MOBILE = 0.18; // iPhone用（0.08〜0.30で調整）
+const GAIN_IOS_PC = 1.0;
 
-async function unlockAndPlay(){
-  // すでに鳴ってるなら何もしない（継続の肝）
-  if (!bgm.paused) {
-    bgmUnlocked = true;
+let audioCtx = null;
+let gainNode = null;
+let sourceNode = null;
+let graphReady = false;
+
+function buildAudioGraphOnce(){
+  // iOS以外：普通にvolumeで制御
+  if (!isIOS) {
+    bgm.volume = isMobile ? 0.003 : VOL_PC;
+    graphReady = true;
     return;
   }
-  try{
+
+  // iOS：ユーザー操作中に1回だけ作る
+  if (graphReady) return;
+
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  sourceNode = audioCtx.createMediaElementSource(bgm);
+  gainNode = audioCtx.createGain();
+
+  gainNode.gain.value = isMobile ? GAIN_IOS_MOBILE : GAIN_IOS_PC;
+
+  sourceNode.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  graphReady = true;
+}
+
+async function unlockAndPlay(){
+  // ★重要：これを「タップ/クリックのイベント内」から呼ぶ
+  try {
+    buildAudioGraphOnce();
+
+    if (audioCtx && audioCtx.state === "suspended") {
+      await audioCtx.resume();
+    }
+
+    // すでに再生中なら何もしない
+    if (!bgm.paused) return;
+
     await bgm.play();
-    bgmUnlocked = true;
-  }catch(err){
-    console.log("BGM blocked:", err);
+  } catch (e) {
+    console.log("BGM play failed:", e);
   }
 }
 
-// ✅ 先頭からやり直し（関数外に置く）
+function setBgmMobileVolume(n){
+  // n: 0.0〜1.0 目安
+  if (isIOS && gainNode && audioCtx) {
+    const t = audioCtx.currentTime;
+    gainNode.gain.setTargetAtTime(n, t, 0.01);
+  } else {
+    bgm.volume = n;
+  }
+}
+
 function restartBgmFromTop(){
   try { bgm.pause(); } catch(e) {}
   try { bgm.currentTime = 0; } catch(e) {}
