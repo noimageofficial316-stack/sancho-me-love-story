@@ -1054,16 +1054,36 @@ async function tryPlayBgmFromTop(){
 }
 
 function onEnterTitle(){
-  tryPlayBgmFromTop();
+  // iOSはユーザー操作なし再生が死ぬので、ここでは何もしない
+  // 解錠後（bgmUnlocked=true）だけ鳴らす
+  if (bgmUnlocked) tryPlayBgmFromTop();
 }
 
-function unlockBgmIfTitle(){
-  if(!scenes.title.classList.contains("active")) return;
+async function unlockBgmIfTitle(){
+  // タイトル以外でも「最初の一回」は解錠してOKにしとくと安定する
   if(bgmUnlocked) return;
-  tryPlayBgmFromTop();
+
+  // ✅ ここが「ユーザー操作中」なので WebAudio 初期化してOK
+  ensureAudioGraph();
+
+  if (audioCtx && audioCtx.state === "suspended") {
+    try { await audioCtx.resume(); } catch(e){}
+  }
+
+  // ✅ 二重再生防止＋確実に先頭
+  try { bgm.pause(); } catch(e){}
+  resetBgmToStart();
+  applyBgmGain();
+
+  try {
+    await bgm.play();
+    bgmUnlocked = true;
+  } catch(e) {
+    // ここで失敗するなら、端末がミュート/音量0/低電力/メディア制限の可能性
+  }
 }
 
-window.addEventListener("pointerdown", unlockBgmIfTitle, { passive:false });
+window.addEventListener("pointerdown", unlockBgmIfTitle, { passive:true });
 window.addEventListener("keydown", (e)=>{
   if(e.key === "Enter" || e.key === " ") unlockBgmIfTitle();
 });
