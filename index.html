@@ -990,10 +990,20 @@ function showScene(name){
    - スマホは基本ブロック → タイトルで最初の操作で解錠して鳴らす
    - 解錠済みならタイトル復帰でも確実に先頭から鳴る
 ========================= */
+/* =========================
+   ✅ BGM（スマホだけ音量でかい対策：play前後で強制適用）
+========================= */
 const bgm = document.getElementById("bgm");
-bgm.volume = 0.0001;
-console.log("BGM volume now:", bgm.volume);
+
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+const VOL_PC = 0.03;     // PCの音量
+const VOL_MB = 0.01;     // スマホの音量（まだデカければ 0.005 → 0.003）
+
 let bgmUnlocked = false;   // ユーザー操作で一度でも再生できたか
+
+function applyBgmVol(){
+  bgm.volume = isMobile ? VOL_MB : VOL_PC;
+}
 
 function resetBgmToStart(){
   try { bgm.currentTime = 0; } catch(e){}
@@ -1001,9 +1011,17 @@ function resetBgmToStart(){
 
 async function tryPlayBgmFromTop(){
   resetBgmToStart();
+
+  // ✅ 再生前に必ず適用
+  applyBgmVol();
+
   try {
     await bgm.play();
-    bgmUnlocked = true; // ここで「解錠済み」にする（超重要）
+
+    // ✅ 再生直後にも再適用（スマホ対策）
+    applyBgmVol();
+
+    bgmUnlocked = true;
   } catch(e) {
     // 自動再生ブロック時はここに来る（スマホで普通）
   }
