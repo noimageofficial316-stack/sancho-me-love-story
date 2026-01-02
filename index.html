@@ -997,8 +997,13 @@ function runTitleAnim(){
 const bgm = document.getElementById("bgm");
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-bgm.volume = isMobile ? 0.0002 : 0.01;
+// 🔊 音量調整（スマホだけ小さく）
+const BGM_VOLUME_PC = 0.015;     // PC用
+const BGM_VOLUME_MOBILE = 0.003; // スマホ用（かなり控えめ）
+
+bgm.volume = isMobile ? BGM_VOLUME_MOBILE : BGM_VOLUME_PC;
 bgm.muted = false;
+
 bgm.setAttribute("playsinline", "");
 bgm.setAttribute("webkit-playsinline", "");
 
