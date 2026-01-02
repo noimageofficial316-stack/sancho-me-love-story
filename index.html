@@ -976,7 +976,7 @@ function showScene(name){
    - 解錠済みならタイトル復帰でも確実に先頭から鳴る
 ========================= */
 const bgm = document.getElementById("bgm");
-bgm.volume = 0.15;
+bgm.volume = 0.05;
 
 let bgmUnlocked = false;   // ユーザー操作で一度でも再生できたか
 
@@ -1364,11 +1364,11 @@ function endingLine(route, total){
   if(route === "gaia"){
     if(total < 0) return "ごめん！トイレ行きたいし帰るわ！";
     if(total < 3) return "ほなまた！";
-    return "やっぱ僕は君がいいんだ";
+    return "やっぱ僕は君がいいんだ。";
   }else{
-    if(total < 0) return "……ありがとうございました";
-    if(total < 3) return "……ありがとうございました";
-    return "やっぱ僕は君がいいんだ";
+    if(total < 0) return "……ありがとうございました。";
+    if(total < 3) return "……ありがとうございました。";
+    return "やっぱ僕は君がいいんだ。";
   }
 }
 
