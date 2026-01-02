@@ -961,9 +961,12 @@
   </div>
 
 <script>
-  // ✅ iOSの“謎スクロール”を完全に止める（復活）
+/* =========================================
+   ✅ iOSの“謎スクロール”を完全に止める
+========================================= */
 const frame = document.getElementById("frame");
 frame.addEventListener("touchmove", (e)=> e.preventDefault(), { passive:false });
+
 /* =========================
    ✅ シーン切替
 ========================= */
@@ -979,23 +982,18 @@ function showScene(name){
 }
 
 /* =========================
-   ✅ BGM（確実版）
-   - タイトル入場で先頭から再生を「試す」
-   - ブロックされたら：タイトル画面の最初のタップ/Enter/Spaceで解錠→先頭から再生
-   - エンディング→タイトル復帰でも onEnterTitle() で先頭から
+   ✅ タイトル演出を毎回再生（復活）
 ========================= */
+const titleScene = document.getElementById("sceneTitle");
+function runTitleAnim(){
+  titleScene.classList.remove("runAnim");
+  void titleScene.offsetWidth;
+  titleScene.classList.add("runAnim");
+}
+
 /* =========================
-   ✅ BGM（超確実版）
-   - タイトル入場で再生を試す（PCで鳴ることあり）
-   - スマホは基本ブロック → タイトルで最初の操作で解錠して鳴らす
-   - 解錠済みならタイトル復帰でも確実に先頭から鳴る
+   ✅ BGM（iOS完全対応・安全版）
 ========================= */
-/* =========================
-   ✅ BGM（スマホだけ音量でかい対策：play前後で強制適用）
-========================= */
-// ==========================
-// BGM（iOS完全対応・安全版）
-// ==========================
 const bgm = document.getElementById("bgm");
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -1012,7 +1010,6 @@ async function unlockAndPlay(){
     bgmUnlocked = true;
     return;
   }
-
   try{
     await bgm.play();
     bgmUnlocked = true;
@@ -1021,7 +1018,7 @@ async function unlockAndPlay(){
   }
 }
 
-// ✅ ここを unlockAndPlay の外に置く！！
+// ✅ 先頭からやり直し（関数外に置く）
 function restartBgmFromTop(){
   try { bgm.pause(); } catch(e) {}
   try { bgm.currentTime = 0; } catch(e) {}
@@ -1079,6 +1076,7 @@ const QUESTIONS = {
 const titleScreen = document.getElementById("titleScreen");
 const startBtn = document.getElementById("startBtn");
 
+// タイトル画面の最初の操作でBGM解錠
 titleScreen.addEventListener("pointerdown", () => {
   if (!scenes.title.classList.contains("active")) return;
   unlockAndPlay();
@@ -1089,7 +1087,7 @@ startBtn.addEventListener("pointerdown", () => {
   unlockAndPlay();
 }, { passive: true });
 
-// STARTボタン押下でも再生保証
+// START押下でも再生保証
 ["touchstart","pointerdown","mousedown","click"].forEach(ev=>{
   startBtn.addEventListener(ev, () => {
     if (!scenes.title.classList.contains("active")) return;
@@ -1116,29 +1114,6 @@ const selScreen = document.getElementById("selScreen");
 const selFlash = document.getElementById("selFlash");
 const selConfirm = document.getElementById("selConfirm");
 const selCards = [...document.querySelectorAll("#sceneSelect .card")];
-
-/* =========================
-   ✅ グローバルリセット（超重要）
-   - Ending→Title の時に全部初期化する
-========================= */
-function hardResetToTitle(){
-  // ENDING
-  resetEndingUI();
-
-  // SELECT
-  selLocked = false;
-  selScreen.classList.remove("fadeout");
-  selConfirm.classList.remove("show");
-  selFlash.classList.remove("on");
-  selCur = 0;
-  selUpdate();
-
-  // GAME
-  resetGameVisual();
-
-  // TITLE
-  titleScreen.classList.remove("fadeout");
-}
 
 let selCur = 0;
 let selLocked = false;
@@ -1333,7 +1308,6 @@ function onChoose(opt){
 
 function startGame(route){
   showScene("game");
-
   resetGameVisual();
 
   const r = charaData[route] ? route : "gaia";
@@ -1446,9 +1420,20 @@ function goTitleFromEnding(){
   setTimeout(()=>{
     endScreen.classList.remove("fadeout");
 
-    restartBgmFromTop(); // ✅ 追加：タイトルへ戻る時も毎回先頭にする
+    // ✅ タイトルへ戻るたびBGM先頭から
+    restartBgmFromTop();
 
-    hardResetToTitle();
+    // ✅ 完全初期化（タイトル用）
+    resetEndingUI();
+    selLocked = false;
+    selScreen.classList.remove("fadeout");
+    selConfirm.classList.remove("show");
+    selFlash.classList.remove("on");
+    selCur = 0;
+    selUpdate();
+    resetGameVisual();
+    titleScreen.classList.remove("fadeout");
+
     showScene("title");
     runTitleAnim();
 
@@ -1563,17 +1548,26 @@ window.addEventListener("keydown", (e)=>{
   }
 });
 
-/* poster click/tap -> title */
+/* poster click/tap -> next */
 endPoster.addEventListener("click", () => {
   const next = endPoster.dataset.next;
 
-if(next === "select"){
-  restartBgmFromTop();  // ✅ 統一
+  // ✅ もう一回：selectへ（タイトル用のhardResetは使わず、selectだけ初期化）
+  if(next === "select"){
+    restartBgmFromTop();
 
-  hardResetToTitle();
-  showScene("select");
-}
+    resetEndingUI();
+    selLocked = false;
+    selCur = 0;
+    selUpdate();
+    selConfirm.classList.remove("show");
+    selFlash.classList.remove("on");
+    selScreen.classList.remove("fadeout");
 
+    showScene("select");
+  }
+
+  // ✅ タイトルへ
   if(next === "title"){
     goTitleFromEnding();
   }
