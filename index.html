@@ -1011,43 +1011,24 @@ bgm.muted = false;
 bgm.setAttribute("playsinline", "");
 bgm.setAttribute("webkit-playsinline", "");
 
-// ✅ audio要素側の音量は“普通”にして、実際の音量はGainで管理する
-bgm.volume = 1.0;
+// ✅ 音量（ここだけ好みで調整）
+bgm.volume = isMobile ? 0.0002 : 0.02;
+
+// ✅ 先読みを“できるだけ早く”開始（iOSでも害なし）
+try { bgm.load(); } catch(e) {}
 
 let bgmUnlocked = false;
 
-// WebAudio（スマホ音量を強制で抑える）
-let audioCtx = null;
-let srcNode = null;
-let gainNode = null;
-
-function ensureAudioGraph(){
-  if (audioCtx) return;
-
-  const Ctx = window.AudioContext || window.webkitAudioContext;
-  audioCtx = new Ctx();
-
-  srcNode = audioCtx.createMediaElementSource(bgm);
-  gainNode = audioCtx.createGain();
-
-  // ✅ ここが本命：スマホだけガッツリ下げる
-  gainNode.gain.value = isMobile ? 0.12 : 0.35;
-  // もっと下げたいなら 0.08 / 0.05 とかに
-
-  srcNode.connect(gainNode).connect(audioCtx.destination);
-}
-
-// クリック/タップで解錠＆再生
 async function unlockAndPlayBgm(){
-  ensureAudioGraph();
-
-  if (audioCtx.state === "suspended") {
-    try { await audioCtx.resume(); } catch(e){}
-  }
-
+  // すでに鳴ってたら何もしない（継続）
   if (!bgm.paused) { bgmUnlocked = true; return; }
 
   try{
+    // 最初の解錠時だけ先頭へ（好みで外してOK）
+    if (!bgmUnlocked) {
+      try { bgm.currentTime = 0; } catch(e){}
+    }
+
     await bgm.play();
     bgmUnlocked = true;
   }catch(err){
