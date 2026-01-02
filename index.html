@@ -991,12 +991,7 @@ function showScene(name){
    - 解錠済みならタイトル復帰でも確実に先頭から鳴る
 ========================= */
 const bgm = document.getElementById("bgm");
-
-// デバイス判定
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-// 音量調整
-bgm.volume = isMobile ? 0.001 : 0.05;
+bgm.volume = 0.0001;
 
 let bgmUnlocked = false;   // ユーザー操作で一度でも再生できたか
 
