@@ -33,20 +33,23 @@
   }
   .scene.active{ opacity:1; pointer-events:auto; }
 
-  @media (max-width: 700px) and (hover: none) and (pointer: coarse){
-    .wrap{
-      padding:
-        calc(12px + env(safe-area-inset-top))
-        calc(12px + env(safe-area-inset-right))
-        calc(12px + env(safe-area-inset-bottom))
-        calc(12px + env(safe-area-inset-left));
-    }
-    .frame{
-      width:360px;
-      height:640px;
-      border-radius:12px;
-    }
+@media (max-width: 700px) and (hover: none) and (pointer: coarse){
+  .wrap{
+    /* 画面ぴったり */
+    padding:
+      env(safe-area-inset-top)
+      env(safe-area-inset-right)
+      env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+    height: 100dvh;
   }
+
+  .frame{
+    width: 100%;
+    height: 100%;
+    border-radius: 0;   /* ぴったり感重視なら0。丸くしたいなら 10px とか */
+  }
+}
 
   /* =========================================================
      ⑤ TITLE
@@ -973,7 +976,7 @@ function showScene(name){
    - 解錠済みならタイトル復帰でも確実に先頭から鳴る
 ========================= */
 const bgm = document.getElementById("bgm");
-bgm.volume = 0.35;
+bgm.volume = 0.15;
 
 let bgmUnlocked = false;   // ユーザー操作で一度でも再生できたか
 
