@@ -996,25 +996,39 @@ function showScene(name){
 // ==========================
 // BGM（iOS完全対応・安全版）
 // ==========================
+c// ==========================
+// BGM（最速・安定版）
+// - 先読み(load)を早めに
+// - playは1本化
+// - iOSは最初の操作で解錠 → 即鳴る
+// ==========================
 const bgm = document.getElementById("bgm");
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-bgm.volume = isMobile ? 0.01 : 0.01;
+bgm.preload = "auto";
+bgm.loop = true;
 bgm.muted = false;
 bgm.setAttribute("playsinline", "");
 bgm.setAttribute("webkit-playsinline", "");
 
+// ✅ 音量（ここだけ好みで調整）
+bgm.volume = isMobile ? 0.0006 : 0.02;
+
+// ✅ 先読みを“できるだけ早く”開始（iOSでも害なし）
+try { bgm.load(); } catch(e) {}
+
 let bgmUnlocked = false;
 
-async function unlockAndPlay(){
-  // すでに鳴ってるなら何もしない（継続の肝）
-  if (!bgm.paused) {
-    bgmUnlocked = true;
-    return;
-  }
+async function unlockAndPlayBgm(){
+  // すでに鳴ってたら何もしない（継続）
+  if (!bgm.paused) { bgmUnlocked = true; return; }
 
   try{
-    // iOSは最初の操作でだけ解錠できる
+    // 最初の解錠時だけ先頭へ（好みで外してOK）
+    if (!bgmUnlocked) {
+      try { bgm.currentTime = 0; } catch(e){}
+    }
+
     await bgm.play();
     bgmUnlocked = true;
   }catch(err){
@@ -1022,6 +1036,12 @@ async function unlockAndPlay(){
   }
 }
 
+// ✅ タブ復帰で止まってたら復帰（地味に効く）
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && bgmUnlocked && bgm.paused) {
+    unlockAndPlayBgm();
+  }
+});
 async function tryPlayBgmFromTop(){
   ensureAudioGraph();
 
