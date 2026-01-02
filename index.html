@@ -1142,7 +1142,7 @@ const startBtn = document.getElementById("startBtn");
 ["touchstart","pointerdown","mousedown","click"].forEach(ev=>{
   titleScreen.addEventListener(ev, () => {
     if (!scenes.title.classList.contains("active")) return;
-    unlockAndPlayFromTop();
+    unlockAndPlay();
   }, { capture:true, passive:false });
 });
 
@@ -1150,7 +1150,7 @@ const startBtn = document.getElementById("startBtn");
 ["touchstart","pointerdown","mousedown","click"].forEach(ev=>{
   startBtn.addEventListener(ev, () => {
     if (!scenes.title.classList.contains("active")) return;
-    unlockAndPlayFromTop();
+    unlockAndPlay();
   }, { capture:true, passive:false });
 });
 
