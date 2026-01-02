@@ -1014,7 +1014,6 @@ async function unlockAndPlay(){
   }
 
   try{
-    // iOSは最初の操作でだけ解錠できる
     await bgm.play();
     bgmUnlocked = true;
   }catch(err){
@@ -1022,14 +1021,11 @@ async function unlockAndPlay(){
   }
 }
 
-/* =========================
-   ✅ タイトル演出を毎回再生
-========================= */
-const titleScene = document.getElementById("sceneTitle");
-function runTitleAnim(){
-  titleScene.classList.remove("runAnim");
-  void titleScene.offsetWidth;
-  titleScene.classList.add("runAnim");
+// ✅ ここを unlockAndPlay の外に置く！！
+function restartBgmFromTop(){
+  try { bgm.pause(); } catch(e) {}
+  try { bgm.currentTime = 0; } catch(e) {}
+  unlockAndPlay();
 }
 
 /* =========================
@@ -1450,7 +1446,9 @@ function goTitleFromEnding(){
   setTimeout(()=>{
     endScreen.classList.remove("fadeout");
 
-    hardResetToTitle();     // ✅ 完全初期化
+    restartBgmFromTop(); // ✅ 追加：タイトルへ戻る時も毎回先頭にする
+
+    hardResetToTitle();
     showScene("title");
     runTitleAnim();
 
@@ -1570,9 +1568,7 @@ endPoster.addEventListener("click", () => {
   const next = endPoster.dataset.next;
 
 if(next === "select"){
-  bgm.pause();
-  try { bgm.currentTime = 0; } catch(e) {}
-  unlockAndPlay();
+  restartBgmFromTop();  // ✅ 統一
 
   hardResetToTitle();
   showScene("select");
