@@ -999,25 +999,26 @@ function showScene(name){
 const bgm = document.getElementById("bgm");
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-// 音量（ここだけ触ればOK）
 bgm.volume = isMobile ? 0.01 : 0.01;
 bgm.muted = false;
-bgm.playsInline = true;
+bgm.setAttribute("playsinline", "");
+bgm.setAttribute("webkit-playsinline", "");
 
-function resetBgmToStart(){
-  try { bgm.currentTime = 0; } catch(e){}
-}
+let bgmUnlocked = false;
 
-function unlockAndPlay(){
-  // もう鳴ってるなら何もしない（ここが超重要）
-  if (!bgm.paused) return;
+async function unlockAndPlay(){
+  // すでに鳴ってるなら何もしない（継続の肝）
+  if (!bgm.paused) {
+    bgmUnlocked = true;
+    return;
+  }
 
-  // paused（止まってる）時だけ再生開始
-  try { bgm.load(); } catch(e){}
-
-  const p = bgm.play();
-  if (p && typeof p.catch === "function") {
-    p.catch(err => console.log("BGM blocked:", err));
+  try{
+    // iOSは最初の操作でだけ解錠できる
+    await bgm.play();
+    bgmUnlocked = true;
+  }catch(err){
+    console.log("BGM blocked:", err);
   }
 }
 
@@ -1138,13 +1139,15 @@ const QUESTIONS = {
 const titleScreen = document.getElementById("titleScreen");
 const startBtn = document.getElementById("startBtn");
 
-// タイトル画面をタップした瞬間にBGM開始
-["touchstart","pointerdown","mousedown","click"].forEach(ev=>{
-  titleScreen.addEventListener(ev, () => {
-    if (!scenes.title.classList.contains("active")) return;
-    unlockAndPlay();
-  }, { capture:true, passive:false });
-});
+titleScreen.addEventListener("pointerdown", () => {
+  if (!scenes.title.classList.contains("active")) return;
+  unlockAndPlay();
+}, { passive: true });
+
+startBtn.addEventListener("pointerdown", () => {
+  if (!scenes.title.classList.contains("active")) return;
+  unlockAndPlay();
+}, { passive: true });
 
 // STARTボタン押下でも再生保証
 ["touchstart","pointerdown","mousedown","click"].forEach(ev=>{
@@ -1514,7 +1517,6 @@ function goTitleFromEnding(){
     hardResetToTitle();     // ✅ 完全初期化
     showScene("title");
     runTitleAnim();
-    onEnterTitle();
 
     setTimeout(()=> startBtn.focus?.(), 50);
   }, 520);
