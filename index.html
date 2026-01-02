@@ -995,14 +995,39 @@ function showScene(name){
 ========================= */
 const bgm = document.getElementById("bgm");
 
+// 端末判定
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-const VOL_PC = 0.03;     // PCの音量
-const VOL_MB = 0.0001;     // スマホの音量（まだデカければ 0.005 → 0.003）
 
-let bgmUnlocked = false;   // ユーザー操作で一度でも再生できたか
+// ここで音量を決める（gain は 0.0〜1.0）
+const GAIN_PC = 0.06;     // PC
+const GAIN_MB = 0.015;    // スマホ（まだデカければ 0.008 とかに）
 
-function applyBgmVol(){
-  bgm.volume = isMobile ? VOL_MB : VOL_PC;
+let bgmUnlocked = false;
+
+// --- WebAudio（iOS対策の本体） ---
+let audioCtx = null;
+let gainNode = null;
+let mediaSrc = null;
+
+function ensureAudioGraph(){
+  if (audioCtx) return;
+
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  audioCtx = new AudioContext();
+
+  // ⚠️ createMediaElementSource は同じ audio 要素に1回しか作れない
+  mediaSrc = audioCtx.createMediaElementSource(bgm);
+  gainNode = audioCtx.createGain();
+
+  mediaSrc.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  applyBgmGain();
+}
+
+function applyBgmGain(){
+  if (!gainNode) return;
+  gainNode.gain.value = isMobile ? GAIN_MB : GAIN_PC;
 }
 
 function resetBgmToStart(){
@@ -1010,38 +1035,34 @@ function resetBgmToStart(){
 }
 
 async function tryPlayBgmFromTop(){
+  ensureAudioGraph();
+
+  // iOSはAudioContextをユーザー操作でresume必要
+  if (audioCtx && audioCtx.state === "suspended") {
+    try { await audioCtx.resume(); } catch(e){}
+  }
+
   resetBgmToStart();
-  applyBgmVol();
+  applyBgmGain();
 
   try {
     await bgm.play();
     bgmUnlocked = true;
-
-    // ✅ 再生直後に何回か叩く（スマホの巻き戻り対策）
-    applyBgmVol();
-    setTimeout(applyBgmVol, 30);
-    setTimeout(applyBgmVol, 120);
-    setTimeout(applyBgmVol, 300);
-
   } catch(e) {
-    // ブロック時
+    // 自動再生ブロック時はここ
   }
 }
-/* タイトルに入ったら「とりあえず再生」を試す */
+
 function onEnterTitle(){
-  // 解錠済みなら確実に鳴らせる
-  // 解錠前でもPCなら鳴る可能性があるので試す
   tryPlayBgmFromTop();
 }
 
-/* タイトル画面での最初の操作で確実に鳴らす */
 function unlockBgmIfTitle(){
   if(!scenes.title.classList.contains("active")) return;
   if(bgmUnlocked) return;
   tryPlayBgmFromTop();
 }
 
-/* タイトル画面のどこをタップしてもOK */
 window.addEventListener("pointerdown", unlockBgmIfTitle, { passive:false });
 window.addEventListener("keydown", (e)=>{
   if(e.key === "Enter" || e.key === " ") unlockBgmIfTitle();
